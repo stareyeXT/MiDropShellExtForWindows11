@@ -226,6 +226,20 @@ namespace ShellExt
 
         public static unsafe void StartShare(string target, string[] files)
         {
+            // 小米互传优先用 Program Files 下的独立 helper（由用户以管理员身份放置，本进程只读不写）。
+            // 每条候选都先做存在性检查，不存在就继续往下走原有候选。华为/荣耀完全不进这条分支。
+            if (string.Equals(target, "XiaomiShare", StringComparison.Ordinal))
+            {
+                foreach (var miHelper in GetProgramFilesHelperCandidates())
+                {
+                    Trace($"StartShare program files candidate={miHelper} exists={System.IO.File.Exists(miHelper)}");
+                    if (LaunchHelper(miHelper, target, files))
+                    {
+                        return;
+                    }
+                }
+            }
+
             var installLocation = PackageProperties.Current?.PackageInstallLocation;
             if (!string.IsNullOrEmpty(installLocation))
             {
@@ -278,6 +292,28 @@ namespace ShellExt
             }
 
             Trace("StartShare: no helper candidate worked");
+        }
+
+        // Program Files 下的 helper 候选，按优先级排（目录名来自实测存在的 C:\Program Files\MI）。
+        // 程序目录一律取 SpecialFolder.ProgramFiles，不拼字符串。
+        private static IEnumerable<string> GetProgramFilesHelperCandidates()
+        {
+            var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            if (string.IsNullOrEmpty(programFiles))
+            {
+                yield break;
+            }
+
+            var mi = System.IO.Path.Combine(programFiles, "MI");
+
+            // 1) MI\MiDrop.Helper\MiDrop.Helper.exe（推荐：专用子目录）
+            yield return System.IO.Path.Combine(mi, "MiDrop.Helper", "MiDrop.Helper.exe");
+
+            // 2) MI\MiDrop.Helper.exe（兼容直接扔在 MI 根目录）
+            yield return System.IO.Path.Combine(mi, "MiDrop.Helper.exe");
+
+            // 3) 管家自己的父目录
+            yield return System.IO.Path.Combine(mi, "XiaomiPCManager", "MiDrop.Helper", "MiDrop.Helper.exe");
         }
 
         // 裸注册时的 helper 位置，按优先级排。
