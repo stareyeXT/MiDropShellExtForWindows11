@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sparse 包清单（不打包任何二进制，只带清单和图标）。
+
+  用途：让 Windows 把 {976D43D8-...} 登记进
+        HKLM\SOFTWARE\Classes\PackagedCom\ClassIndex\{CLSID}\<PackageFullName>
+  这是 Win11 新式右键菜单（非「显示更多选项」）唯一认的注册形态。
+
+  外部目录：默认 %LOCALAPPDATA%\MiDropHelper
+    - MiDropShellExt.dll   （ShellExt 的 NativeAOT 产物）
+    - MiDrop.Helper.exe    （MiDrop.Helper 的自包含 AOT 产物）
+
+  实测依据（本机注册表）：
+    HKLM\SOFTWARE\Classes\*\shell\MiDropExtMenu
+      ExplorerCommandHandler = {504d69c0-cb52-48df-b5b5-7161829fabc8}
+    HKLM\SOFTWARE\Classes\CLSID\{504d69c0-...}\InprocServer32
+      (Default) = ...\6.0.2.30\MiSmartShare\MiDropShellExt.dll
+  包里用的 976D43D8 是 DllMain 里已有的 PackagedClsid1，DLL 无需改动。
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
+  xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  IgnorableNamespaces="uap uap10 rescap desktop4 desktop5 com">
+
+  <Identity Name="MiDropShellExt.Sparse"
+            Publisher="CN=MiDropShellExt-Dev"
+            Version="1.0.0.0"
+            ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>MiDrop 右键扩展（sparse）</DisplayName>
+    <PublisherDisplayName>MiDropShellExt</PublisherDisplayName>
+    <Logo>XiaomiImages\StoreLogo.png</Logo>
+    <!-- sparse 包的开关：允许 Application 的 Executable / COM Path 指向包外文件。
+         注意这是 Properties 下的子元素，不是 Package 的属性（写成属性会报 0xC00CE015）。 -->
+    <uap10:AllowExternalContent>true</uap10:AllowExternalContent>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="zh-CN" />
+  </Resources>
+
+  <Applications>
+    <!-- 入口 exe 走外部目录，所以必须声明 mediumIL + win32App -->
+    <Application Id="XiaomiApp"
+                 Executable="MiDrop.Helper.exe"
+                 uap10:TrustLevel="mediumIL"
+                 uap10:RuntimeBehavior="win32App">
+      <uap:VisualElements DisplayName="使用小米互传发送"
+                          Description="使用小米互传发送"
+                          BackgroundColor="transparent"
+                          Square150x150Logo="XiaomiImages\Square150x150Logo.png"
+                          Square44x44Logo="XiaomiImages\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="XiaomiImages\Wide310x150Logo.png" />
+        <uap:SplashScreen Image="XiaomiImages\SplashScreen.png" />
+      </uap:VisualElements>
+    </Application>
+
+    <Application Id="XiaomiShare"
+                 Executable="MiDrop.Helper.exe"
+                 uap10:TrustLevel="mediumIL"
+                 uap10:RuntimeBehavior="win32App">
+      <uap:VisualElements DisplayName="小米互传"
+                          Description="小米互传"
+                          BackgroundColor="transparent"
+                          Square150x150Logo="XiaomiImages\Square150x150Logo.png"
+                          Square44x44Logo="XiaomiImages\Square44x44Logo.png"
+                          AppListEntry="none">
+        <uap:DefaultTile Wide310x150Logo="XiaomiImages\Wide310x150Logo.png" />
+        <uap:SplashScreen Image="XiaomiImages\SplashScreen.png" />
+      </uap:VisualElements>
+
+      <Extensions>
+        <!-- COM 服务器：路径相对外部目录 -->
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:SurrogateServer DisplayName="MiDropShellExt">
+              <com:Class Id="976D43D8-907F-46AF-B47F-07084C71A2F0"
+                         Path="MiDropShellExt.dll"
+                         ThreadingModel="STA" />
+            </com:SurrogateServer>
+          </com:ComServer>
+        </com:Extension>
+
+        <!-- 新式右键菜单：文件和目录。
+             项类型必须用 desktop5:ItemType —— 同机百度网盘的 sparse 包
+             （BaiduNetdisk.DesktopSyncClient 7.17.5.6，逐字节看过它的 AppxManifest.xml）
+             对 "*" 和 "Directory" 用的都是 desktop5:ItemType + desktop5:Verb。 -->
+        <desktop4:Extension Category="windows.fileExplorerContextMenus">
+          <desktop4:FileExplorerContextMenus>
+            <desktop5:ItemType Type="*">
+              <desktop5:Verb Id="CMiDropContextMenuExt" Clsid="976D43D8-907F-46AF-B47F-07084C71A2F0" />
+            </desktop5:ItemType>
+            <desktop5:ItemType Type="Directory">
+              <desktop5:Verb Id="CMiDropContextMenuExt" Clsid="976D43D8-907F-46AF-B47F-07084C71A2F0" />
+            </desktop5:ItemType>
+          </desktop4:FileExplorerContextMenus>
+        </desktop4:Extension>
+
+        <!-- 系统「共享」面板入口（Program.cs 已实现 ShareTarget 激活分支） -->
+        <uap:Extension Category="windows.shareTarget">
+          <uap:ShareTarget Description="使用小米互传发送">
+            <uap:SupportedFileTypes>
+              <uap:SupportsAnyFileType />
+            </uap:SupportedFileTypes>
+            <uap:DataFormat>Bitmap</uap:DataFormat>
+            <uap:DataFormat>StorageItems</uap:DataFormat>
+          </uap:ShareTarget>
+        </uap:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

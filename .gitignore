@@ -338,3 +338,10 @@ ASALocalRun/
 /src/Build/XiaomiShare/
 /src/Build/HonorShare/
 /src/Build/HuaweiShare/
+
+# 本机备份（注册表导出、官方/本地 DLL 快照），只在本机用，不提交
+/.backup/
+
+# sparse 包里的二进制（由 dotnet publish 生成，不提交）
+/src/SparsePackage/MiDrop.Helper.exe
+/src/SparsePackage/MiDropShellExt.dll
