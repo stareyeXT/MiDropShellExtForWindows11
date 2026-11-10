@@ -25,6 +25,8 @@ New-Item -ItemType Directory -Force -Path (Join-Path $stage 'SparsePackage\Xiaom
 Copy-Item -Path (Join-Path $pkg 'XiaomiImages\*') -Destination (Join-Path $stage 'SparsePackage\XiaomiImages') -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $repo 'dist\安装.ps1') -Destination (Join-Path $stage '安装.ps1') -Force
 Copy-Item -LiteralPath (Join-Path $repo 'dist\卸载.ps1') -Destination (Join-Path $stage '卸载.ps1') -Force
+Copy-Item -LiteralPath (Join-Path $repo 'dist\安装.cmd') -Destination (Join-Path $stage '安装.cmd') -Force
+Copy-Item -LiteralPath (Join-Path $repo 'dist\卸载.cmd') -Destination (Join-Path $stage '卸载.cmd') -Force
 
 foreach ($d in @('安装说明.md', '功能对照表.md', '回滚说明.md')) {
     $src = Join-Path $repo ('docs\' + $d)

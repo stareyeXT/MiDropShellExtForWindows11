@@ -3,8 +3,8 @@
     一键安装「使用小米互传发送」右键扩展（适配小米电脑管家 6.0.2.30）。
 
 .DESCRIPTION
-    双击、或右键「使用 PowerShell 运行」即可。脚本会自己请求管理员权限
-    （会弹 UAC，点「是」），不需要你手工开管理员终端。
+    双击 安装.cmd（推荐；从网上下载的包也能直接跑）。脚本会自己请求管理员
+    权限（会弹 UAC，点「是」），不需要你手工开管理员终端。
 
     做四件事：
       1. 前置检查：管理员权限、开发者模式、安装文件是否齐全
@@ -19,7 +19,7 @@
     不提权直接跑，仅用于调试。
 
 .EXAMPLE
-    powershell -ExecutionPolicy Bypass -File 安装.ps1
+    powershell -ExecutionPolicy Bypass -File .\安装.ps1   # 出问题时用这条；平时直接双击 安装.cmd
 #>
 [CmdletBinding()]
 param(
@@ -32,6 +32,13 @@ try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch { }
 try { $OutputEncoding = [Text.Encoding]::UTF8 } catch { }
 
 $TOTAL = 5
+
+# 从网上下载的 zip 解压后，每个文件都带「来自 Internet」标记（Zone.Identifier）。
+# 这里顺手把自己所在目录解锁，免得下次还要手工右键属性「解除锁定」。失败不影响安装。
+try {
+    Get-ChildItem -LiteralPath $PSScriptRoot -Recurse -File -ErrorAction SilentlyContinue |
+        Unblock-File -ErrorAction SilentlyContinue
+} catch { }
 
 function Write-Step {
     param([int]$n, [string]$text)
@@ -67,7 +74,7 @@ function Get-ErrorHint {
         return '0x800B0109：包没有可信签名。本包走开发者模式注册，请在「设置 → 系统 → 开发者选项」里打开开发者模式后重试。'
     }
     if ($m -match '0x80073CF9') {
-        return '0x80073CF9：同版本包已经装过了。先运行同目录的 卸载.ps1，再重新安装。'
+        return '0x80073CF9：同版本包已经装过了。先运行同目录的 卸载.cmd，再重新安装。'
     }
     if ($m -match '0x80073CF6') {
         return '0x80073CF6：包无法注册。通常是开发者模式没开，或另一个会话正在占用这个包。'
@@ -319,7 +326,7 @@ Write-Host ''
 Write-Host ' 日志：'
 Write-Host ('   ' + (Join-Path $extDir 'shellExt.log'))
 Write-Host ''
-Write-Host ' 卸载：运行同目录的 卸载.ps1'
+Write-Host ' 卸载：双击同目录的 卸载.cmd'
 Write-Host ''
 Read-Host '按回车关闭' | Out-Null
 exit 0

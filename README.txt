@@ -3,7 +3,13 @@ MiDropShellExt —— 给 Windows 11 加上「使用小米互传发送」
 
 安装
   1. 解压到一个固定目录（以后卸载要用同一个目录）
-  2. 右键「安装.ps1」→ 使用 PowerShell 运行
+  2. 双击「安装.cmd」
+     这一步不能直接运行 安装.ps1：从网上下载的 zip 解压后，.ps1 会被系统标成
+     「来自 Internet」，直接跑会报「未经数字签名 / 在此系统上禁止运行脚本」。
+     安装.cmd 用 -ExecutionPolicy Bypass 调起 PowerShell，绕开这个限制。
+     不想用 .cmd 的两种替代：
+       · 右键 zip → 属性 → 勾选「解除锁定」→ 应用，然后再解压
+       · 在 PowerShell 里跑： powershell -ExecutionPolicy Bypass -File .\安装.ps1
      脚本会自己请求提权（UAC 点「是」），然后：
        · 把 helper 放到 C:\Program Files\MI\MiDrop.Helper\MiDrop.Helper.exe
        · 把 DLL、helper 副本、XiaomiImages\、AppxManifest.xml 放到 %LOCALAPPDATA%\MiDropHelper\
@@ -29,7 +35,8 @@ MiDropShellExt —— 给 Windows 11 加上「使用小米互传发送」
   点击只弹「小米互传 · 发送」窗口，不点设备不会真的发送。
 
 卸载
-  运行同一个包里的「卸载.ps1」（同样会自己请求提权）。
+  双击同一个包里的「卸载.cmd」（同样会自己请求提权）；
+  也可以直接用 powershell -ExecutionPolicy Bypass -File .\卸载.ps1。
   它会注销 sparse 包、删掉 %LOCALAPPDATA%\MiDropHelper；
   删 C:\Program Files\MI\MiDrop.Helper 前需要输入大写 YES 二次确认。
 
@@ -45,5 +52,13 @@ MiDropShellExt —— 给 Windows 11 加上「使用小米互传发送」
     Program Files 下的 helper；最后真正用的是 exists=True 那一条，不影响功能。
   * 把 helper 放进 sparse 包目录（ExternalLocation）后发送会失败，根因未定位，
     所以 helper 一律留在包外。
+
+常见报错
+  * 「无法加载文件 …未经数字签名」或「在此系统上禁止运行脚本」
+    → 你在直接运行 .ps1。改用同目录的 安装.cmd / 卸载.cmd。
+  * 双击 .cmd 弹出「打开文件 - 安全警告」→ 点「运行」。
+  * 0x800B0109 或 0x80073CFF → 没开开发者模式（设置 → 系统 → 开发者选项）。
+  * 0x80073CF6 / 0x80070003「找不到初始屏幕图像 SplashScreen.png」
+    → 解压不完整，确认 SparsePackage\XiaomiImages 里有 12 张 png 后重解压。
 
 上游版本变更（自 1.0.2）：1.0.6 移除桌面触发角；1.0.10 起支持华为分享与荣耀分享。

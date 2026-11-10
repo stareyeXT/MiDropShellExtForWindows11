@@ -3,7 +3,7 @@
     一键卸载「使用小米互传发送」右键扩展。
 
 .DESCRIPTION
-    双击、或右键「使用 PowerShell 运行」即可，脚本会自己请求管理员权限。
+    双击 卸载.cmd（推荐；从网上下载的包也能直接跑）。脚本会自己请求管理员权限。
 
     做的事情：
       1. 前置检查（管理员、找到当前安装）
@@ -18,7 +18,7 @@
     不提权直接跑，仅用于调试。
 
 .EXAMPLE
-    powershell -ExecutionPolicy Bypass -File 卸载.ps1
+    powershell -ExecutionPolicy Bypass -File .\卸载.ps1   # 出问题时用这条；平时直接双击 卸载.cmd
 #>
 [CmdletBinding()]
 param(
@@ -32,6 +32,13 @@ try { $OutputEncoding = [Text.Encoding]::UTF8 } catch { }
 
 $TOTAL = 5
 $PKG_NAME = 'MiDropShellExt.Sparse'
+
+# 从网上下载的 zip 解压后，每个文件都带「来自 Internet」标记（Zone.Identifier）。
+# 这里顺手把自己所在目录解锁，免得下次还要手工右键属性「解除锁定」。失败不影响卸载。
+try {
+    Get-ChildItem -LiteralPath $PSScriptRoot -Recurse -File -ErrorAction SilentlyContinue |
+        Unblock-File -ErrorAction SilentlyContinue
+} catch { }
 
 function Write-Step {
     param([int]$n, [string]$text)
